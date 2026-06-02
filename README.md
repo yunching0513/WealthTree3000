@@ -8,6 +8,14 @@
 
 完整產品規格見 [`SPEC.md`](./SPEC.md)。
 
+## 畫面預覽
+
+| 溫室總覽・起步樹苗 | 溫室總覽・15 年後 | 暴風雨・2008 模擬 | 水源分配器 |
+|:---:|:---:|:---:|:---:|
+| ![](./shots/01-dashboard-initial.png) | ![](./shots/02-dashboard-grown.png) | ![](./shots/04-storm.png) | ![](./shots/03-budget.png) |
+
+> 上圖由 [`tools/render.mjs`](./tools/render.mjs) 產生：直接重現 `WealthTree.tsx` 的繪圖程式（座標、path、配色完全相同），套上手機外框後以 `sharp` 轉 PNG，供無頭環境預覽。樹的視覺即 App 實際畫出的樣子；emoji 在此渲染器為單色，於裝置上會是彩色。重跑：`npm i sharp && node tools/render.mjs`（需系統 CJK 字型）。
+
 ---
 
 ## 快速開始
