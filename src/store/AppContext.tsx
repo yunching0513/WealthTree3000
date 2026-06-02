@@ -1,16 +1,18 @@
 /**
  * 全域狀態 + 本機端持久化（離線優先）。
  *
- * 財務數據屬高度隱私：此原型一律存於裝置本機（AsyncStorage），
- * 開發方伺服器不留存明碼財務數據。正式版會在此層加上本機加密與
- * iCloud / Google Drive 備份。
+ * 財務數據屬高度隱私：一律存於裝置本機，且以 AES 靜置加密（金鑰存於
+ * iOS Keychain / Android Keystore，見 secureStorage.ts）。開發方伺服器
+ * 不留存任何財務數據；跨裝置移轉走「設定 → 加密備份」。
  */
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_STATE, FinanceState, Expense, clamp } from './finance';
 import { fetchMarketSnapshot, isMarketStale } from '../services/market';
+import { getDecrypted, setEncrypted } from './secureStorage';
 
-const STORAGE_KEY = '@wealthtree3000/state/v1';
+const LEGACY_KEY = '@wealthtree3000/state/v1'; // 舊版明碼（將自動遷移為密文）
+const STORAGE_KEY = '@wealthtree3000/state/enc/v1'; // 靜置加密後的資料
 
 type Action =
   | { type: 'hydrate'; payload: FinanceState }
@@ -128,14 +130,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // 啟動時從本機載入
+  // 啟動時從本機載入（密文解密；必要時自舊版明碼遷移）
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) dispatch({ type: 'hydrate', payload: { ...DEFAULT_STATE, ...JSON.parse(raw) } });
+        const enc = await getDecrypted(STORAGE_KEY);
+        if (enc) {
+          dispatch({ type: 'hydrate', payload: { ...DEFAULT_STATE, ...JSON.parse(enc) } });
+        } else {
+          // 遷移：舊版明碼 → 加密後寫回，並刪除明碼
+          const legacy = await AsyncStorage.getItem(LEGACY_KEY);
+          if (legacy) {
+            dispatch({ type: 'hydrate', payload: { ...DEFAULT_STATE, ...JSON.parse(legacy) } });
+            await setEncrypted(STORAGE_KEY, legacy);
+            await AsyncStorage.removeItem(LEGACY_KEY);
+          }
+        }
       } catch {
-        // 讀取失敗則沿用預設值（離線優先，不阻斷使用）
+        // 讀取/解密失敗則沿用預設值（離線優先，不阻斷使用）
       } finally {
         hydrated.current = true;
         setReady(true);
@@ -143,10 +155,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  // 變更時寫回本機
+  // 變更時加密寫回本機
   useEffect(() => {
     if (!hydrated.current) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+    setEncrypted(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
   }, [state]);
 
   // 載入完成後，若指數資料過期（>28 天）則於背景短暫連網更新一次（符合「僅每月連網」）

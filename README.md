@@ -74,7 +74,12 @@ src/
   theme.ts                    # 大地色系 + 多層次綠的設計 token
   store/
     finance.ts                # 領域邏輯（純函式）：資產、生長階段、投影、風暴情境
-    AppContext.tsx            # 全域狀態 + AsyncStorage 本機持久化
+    AppContext.tsx            # 全域狀態 + 本機持久化（含市場同步、靜置加密、遷移）
+    secureStorage.ts          # 靜置加密：AES + 金鑰存於 Keychain/Keystore
+    backup.ts                 # 加密備份 / 還原（分享面板 + 文件選擇器）
+  services/
+    market.ts                 # 真實大盤指數（Stooq）→ 趨勢 → 季節；離線快取
+    notifications.ts          # 低干擾本機通知（超支提醒、靜默扣款）
   components/
     WealthTree.tsx            # 核心視覺：以 SVG 把財務狀態畫成一棵樹
     TabBar.tsx                # 自製底部分頁列（零導航依賴）
@@ -84,17 +89,19 @@ src/
     BudgetScreen.tsx          # 水源分配器
     GreenhouseScreen.tsx      # 時光溫室
     StormScreen.tsx           # 暴風雨模擬器
+    SettingsModal.tsx         # 設定：加密狀態 / 備份還原 / 通知
 ```
 
 ## 原型已實作 vs 待補
 
 **已實作**：四大模組畫面、財富樹 SVG（生長 / 根系 / 季節 / 葉片健康 / 年輪 / 陪伴動物 / 風暴傾斜）、
 本機持久化、防呆密碼鎖、盲盒模式、月度結算與複利成長、複利快轉與歷史風暴動畫、
-**加密備份 / 還原**（AES 加密，經系統分享面板匯出到 iCloud / Google Drive，伺服器不接觸資料）、
+**本機靜置加密**（at-rest，AES 加密 AsyncStorage 內容，金鑰存於 iOS Keychain / Android Keystore，並自動遷移舊版明碼）、
+**加密備份 / 還原**（經系統分享面板匯出到 iCloud / Google Drive，伺服器不接觸資料）、
 **真實大盤指數串接**（Stooq 月線 S&P 500，無金鑰；離線快取、僅每月連網一次，驅動天氣/季節）、
 **低干擾本機通知**（生活費即將見底 / 已超支提醒；每月扣款成功僅靜默通知）。
 
-**待補（正式版）**：本機端「靜置加密」（at-rest，加密 AsyncStorage 內容）、匯率串接、原生桌面 Widget。
+**待補（正式版）**：匯率串接、原生桌面 Widget。
 
 ## 驗證狀態
 

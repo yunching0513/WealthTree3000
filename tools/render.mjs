@@ -204,27 +204,33 @@ function settings() {
   const bg = `<rect width="${W}" height="${H}" fill="${C.sand}"/>` + header() +
     dashboard(init, { season: 'summer', rings: 0, companions: [], phase: '階段一・博士班醞釀期', stage: '🌱 目前階段：發芽樹苗' }) + tabbar(0);
   const dim = `<rect width="${W}" height="${H}" fill="#33291F" opacity="0.4"/>`;
-  const top = 210;
+  const top = 196;
   let s = `<rect x="0" y="${top}" width="${W}" height="${H - top}" rx="24" fill="${C.sand}"/>`;
-  s += txt(20, top + 38, '設定', { size: 22, weight: 'bold', color: C.leafDeep });
-  s += txt(W - 24, top + 38, '✕', { size: 20, anchor: 'end', color: C.inkSoft });
-  s += card(16, top + 56, 358, 366);
-  s += txt(32, top + 90, '資料備份與還原', { size: 17, weight: 'bold' });
-  s += txt(32, top + 116, '你的財務資料只存在這支手機。建議定期匯出備份到', { size: 12, color: C.inkSoft });
-  s += txt(32, top + 134, 'iCloud / Google Drive，換手機時即可還原 30 年的財富樹。', { size: 12, color: C.inkSoft });
-  s += txt(32, top + 152, '開發方伺服器全程不接觸你的資料。', { size: 12, color: C.inkSoft });
-  s += txt(32, top + 184, '加密密碼（選填，建議設定）', { size: 13, weight: 'bold', color: C.inkSoft });
-  s += `<rect x="32" y="${top + 196}" width="326" height="44" rx="10" fill="#F4F0E6"/>` + txt(46, top + 223, '留空則匯出明碼 JSON', { size: 14, color: C.inkFaint });
-  s += txt(32, top + 262, '設了密碼，備份檔會以 AES 加密；還原時需相同密碼。', { size: 11, color: C.inkSoft });
-  s += `<rect x="32" y="${top + 280}" width="326" height="46" rx="23" fill="${C.leaf}"/>` + txt(195, top + 309, '匯出備份', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
-  s += `<rect x="32" y="${top + 334}" width="326" height="46" rx="23" fill="${C.bark}"/>` + txt(195, top + 363, '從備份還原', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
+  s += txt(20, top + 34, '設定', { size: 22, weight: 'bold', color: C.leafDeep });
+  s += txt(W - 24, top + 34, '✕', { size: 20, anchor: 'end', color: C.inkSoft });
+  // 靜置加密狀態卡
+  s += card(16, top + 50, 358, 96);
+  s += txt(32, top + 80, '🔐 本機資料已靜置加密', { size: 17, weight: 'bold', color: C.leafDeep });
+  s += `<rect x="232" y="${top + 64}" width="126" height="24" rx="12" fill="#E3F1E2"/>` + txt(295, top + 81, '金鑰存於安全區', { size: 11, anchor: 'middle', color: C.leafDeep, weight: 'bold' });
+  s += txt(32, top + 108, '資料以 AES 加密，金鑰放在 iOS Keychain / Android', { size: 12, color: C.inkSoft });
+  s += txt(32, top + 126, 'Keystore，只在裝置解鎖時可讀。', { size: 12, color: C.inkSoft });
+  // 備份卡
+  const b = top + 158;
+  s += card(16, b, 358, 360);
+  s += txt(32, b + 32, '資料備份與還原', { size: 17, weight: 'bold' });
+  s += txt(32, b + 58, '建議定期匯出備份到 iCloud / Google Drive，', { size: 12, color: C.inkSoft });
+  s += txt(32, b + 76, '換手機時即可還原 30 年的財富樹。', { size: 12, color: C.inkSoft });
+  s += txt(32, b + 108, '加密密碼（選填，建議設定）', { size: 13, weight: 'bold', color: C.inkSoft });
+  s += `<rect x="32" y="${b + 120}" width="326" height="44" rx="10" fill="#F4F0E6"/>` + txt(46, b + 147, '留空則匯出明碼 JSON', { size: 14, color: C.inkFaint });
+  s += txt(32, b + 186, '設了密碼，備份檔會以 AES 加密；還原時需相同密碼。', { size: 11, color: C.inkSoft });
+  s += `<rect x="32" y="${b + 204}" width="326" height="46" rx="23" fill="${C.leaf}"/>` + txt(195, b + 233, '匯出備份', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
+  s += `<rect x="32" y="${b + 258}" width="326" height="46" rx="23" fill="${C.bark}"/>` + txt(195, b + 287, '從備份還原', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
   // 低干擾提醒卡
-  const ny = top + 56 + 366 + 12;
-  s += card(16, ny, 358, 116);
+  const ny = b + 360 + 12;
+  s += card(16, ny, 358, 100);
   s += txt(32, ny + 30, '低干擾提醒', { size: 17, weight: 'bold' });
-  s += txt(32, ny + 54, '平時不打擾。只有生活費即將見底 / 已超支才提醒；', { size: 12, color: C.inkSoft });
+  s += txt(32, ny + 54, '只有生活費即將見底 / 已超支才提醒；', { size: 12, color: C.inkSoft });
   s += txt(32, ny + 72, '每月扣款成功僅以靜默通知呈現。', { size: 12, color: C.inkSoft });
-  s += `<rect x="32" y="${ny + 84}" width="326" height="20" rx="6" fill="${C.leafLight}"/>` + txt(195, ny + 99, '啟用提醒', { size: 12, anchor: 'middle', color: '#fff', weight: 'bold' });
   return bg + dim + s;
 }
 await renderRaw('05-settings-backup', settings());

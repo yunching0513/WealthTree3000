@@ -12,8 +12,9 @@ import {
 } from 'react-native';
 import { useApp } from '../store/AppContext';
 import { exportBackup, importBackup } from '../store/backup';
+import { isHardwareBacked } from '../store/secureStorage';
 import { ensurePermissions } from '../services/notifications';
-import { Card, Caption, PrimaryButton, SectionTitle } from '../components/ui';
+import { Card, Caption, Pill, PrimaryButton, SectionTitle } from '../components/ui';
 import { colors, font, radius, space } from '../theme';
 
 export function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -74,6 +75,17 @@ export function SettingsModal({ visible, onClose }: { visible: boolean; onClose:
           </View>
 
           <ScrollView contentContainerStyle={{ paddingBottom: space.lg }} keyboardShouldPersistTaps="handled">
+            <Card>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusText}>🔐 本機資料已靜置加密</Text>
+                <Pill tone="good">{isHardwareBacked() ? '金鑰存於安全區' : 'web 預覽'}</Pill>
+              </View>
+              <Caption>
+                存在手機裡的財務資料以 AES 加密，金鑰放在 iOS Keychain / Android Keystore，
+                只在裝置解鎖時可讀。即使手機檔案被取得，沒有金鑰也無法解讀。
+              </Caption>
+            </Card>
+
             <Card>
               <SectionTitle>資料備份與還原</SectionTitle>
               <Caption>
@@ -138,6 +150,8 @@ const styles = StyleSheet.create({
   handleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.md },
   title: { fontSize: font.title, fontWeight: '800', color: colors.leafDeep },
   close: { fontSize: 20, color: colors.inkSoft, paddingHorizontal: space.sm },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.sm },
+  statusText: { fontSize: font.section, fontWeight: '700', color: colors.leafDeep },
   label: { fontSize: font.small, color: colors.inkSoft, fontWeight: '700', marginTop: space.md, marginBottom: space.xs },
   input: {
     backgroundColor: '#F4F0E6',
