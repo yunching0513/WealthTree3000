@@ -10,9 +10,9 @@
 
 ## 畫面預覽
 
-| 溫室總覽・起步樹苗 | 溫室總覽・15 年後 | 暴風雨・2008 模擬 | 水源分配器 |
-|:---:|:---:|:---:|:---:|
-| ![](./shots/01-dashboard-initial.png) | ![](./shots/02-dashboard-grown.png) | ![](./shots/04-storm.png) | ![](./shots/03-budget.png) |
+| 溫室總覽・起步樹苗 | 溫室總覽・15 年後 | 暴風雨・2008 模擬 | 水源分配器 | 設定・加密備份 |
+|:---:|:---:|:---:|:---:|:---:|
+| ![](./shots/01-dashboard-initial.png) | ![](./shots/02-dashboard-grown.png) | ![](./shots/04-storm.png) | ![](./shots/03-budget.png) | ![](./shots/05-settings-backup.png) |
 
 > 上圖由 [`tools/render.mjs`](./tools/render.mjs) 產生：直接重現 `WealthTree.tsx` 的繪圖程式（座標、path、配色完全相同），套上手機外框後以 `sharp` 轉 PNG，供無頭環境預覽。樹的視覺即 App 實際畫出的樣子；emoji 在此渲染器為單色，於裝置上會是彩色。重跑：`npm i sharp && node tools/render.mjs`（需系統 CJK 字型）。
 
@@ -89,9 +89,10 @@ src/
 ## 原型已實作 vs 待補
 
 **已實作**：四大模組畫面、財富樹 SVG（生長 / 根系 / 季節 / 葉片健康 / 年輪 / 陪伴動物 / 風暴傾斜）、
-本機持久化、防呆密碼鎖、盲盒模式、月度結算與複利成長、複利快轉與歷史風暴動畫。
+本機持久化、防呆密碼鎖、盲盒模式、月度結算與複利成長、複利快轉與歷史風暴動畫、
+**加密備份 / 還原**（AES 加密，透過系統分享面板匯出到 iCloud / Google Drive，伺服器不接觸資料）。
 
-**待補（正式版）**：本機端加密與 iCloud / Google Drive 備份、真實大盤指數 / 匯率串接（每月短暫連網）、
+**待補（正式版）**：本機端「靜置加密」（at-rest，加密 AsyncStorage 內容）、真實大盤指數 / 匯率串接（每月短暫連網）、
 低干擾系統推播（超支警示、靜默扣款通知）、原生桌面 Widget。
 
 ## 驗證狀態

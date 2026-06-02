@@ -5,7 +5,11 @@
   "dependencies": {
     "@expo/metro-runtime": "^56.0.13",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "crypto-js": "^4.2.0",
     "expo": "~56.0.8",
+    "expo-document-picker": "~56.0.4",
+    "expo-file-system": "~56.0.7",
+    "expo-sharing": "~56.0.15",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-dom": "^19.2.3",
@@ -14,6 +18,7 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },

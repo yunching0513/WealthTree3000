@@ -81,6 +81,7 @@ interface AppContextValue {
   closeMonth: () => void;
   setMarketTrend: (value: number) => void;
   unlockAndSetBudget: (password: string, livingBudget: number) => boolean;
+  restore: (payload: FinanceState) => void;
   reset: () => void;
 }
 
@@ -125,6 +126,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'setBudget', livingBudget });
         return true;
       },
+      restore: (payload) => dispatch({ type: 'hydrate', payload: { ...DEFAULT_STATE, ...payload } }),
       reset: () => dispatch({ type: 'reset' }),
     }),
     [state, ready],

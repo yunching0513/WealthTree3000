@@ -192,4 +192,34 @@ await render('01-dashboard-initial', dashboard(init, { season: 'summer', rings: 
 await render('02-dashboard-grown', dashboard(grown, { season: 'summer', rings: 15, companions: COMPANIONS, phase: '階段二・穩健扎根期', stage: '🌳 目前階段：大樹' }), 0);
 await render('03-budget', budget(), 1);
 await render('04-storm', storm(), 3);
+
+// 設定・備份(底部 sheet 蓋在溫室總覽上)
+async function renderRaw(name, fullBody) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${fullBody}</svg>`;
+  writeFileSync(`shots/${name}.svg`, svg);
+  await sharp(Buffer.from(svg), { density: 144 }).png().toFile(`shots/${name}.png`);
+  console.log('rendered', name);
+}
+function settings() {
+  const bg = `<rect width="${W}" height="${H}" fill="${C.sand}"/>` + header() +
+    dashboard(init, { season: 'summer', rings: 0, companions: [], phase: '階段一・博士班醞釀期', stage: '🌱 目前階段：發芽樹苗' }) + tabbar(0);
+  const dim = `<rect width="${W}" height="${H}" fill="#33291F" opacity="0.4"/>`;
+  const top = 210;
+  let s = `<rect x="0" y="${top}" width="${W}" height="${H - top}" rx="24" fill="${C.sand}"/>`;
+  s += txt(20, top + 38, '設定', { size: 22, weight: 'bold', color: C.leafDeep });
+  s += txt(W - 24, top + 38, '✕', { size: 20, anchor: 'end', color: C.inkSoft });
+  s += card(16, top + 56, 358, 366);
+  s += txt(32, top + 90, '資料備份與還原', { size: 17, weight: 'bold' });
+  s += txt(32, top + 116, '你的財務資料只存在這支手機。建議定期匯出備份到', { size: 12, color: C.inkSoft });
+  s += txt(32, top + 134, 'iCloud / Google Drive，換手機時即可還原 30 年的財富樹。', { size: 12, color: C.inkSoft });
+  s += txt(32, top + 152, '開發方伺服器全程不接觸你的資料。', { size: 12, color: C.inkSoft });
+  s += txt(32, top + 184, '加密密碼（選填，建議設定）', { size: 13, weight: 'bold', color: C.inkSoft });
+  s += `<rect x="32" y="${top + 196}" width="326" height="44" rx="10" fill="#F4F0E6"/>` + txt(46, top + 223, '留空則匯出明碼 JSON', { size: 14, color: C.inkFaint });
+  s += txt(32, top + 262, '設了密碼，備份檔會以 AES 加密；還原時需相同密碼。', { size: 11, color: C.inkSoft });
+  s += `<rect x="32" y="${top + 280}" width="326" height="46" rx="23" fill="${C.leaf}"/>` + txt(195, top + 309, '匯出備份', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
+  s += `<rect x="32" y="${top + 334}" width="326" height="46" rx="23" fill="${C.bark}"/>` + txt(195, top + 363, '從備份還原', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
+  return bg + dim + s;
+}
+await renderRaw('05-settings-backup', settings());
+
 console.log('done; grown:', JSON.stringify({ total: Math.round(grown.total), progress: +(grown.progress * 100).toFixed(1), root: +grown.root.toFixed(2) }));

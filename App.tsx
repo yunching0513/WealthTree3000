@@ -3,7 +3,7 @@
  * 為長期投資者打造的反焦慮記帳與目標管理 App。
  */
 import React, { useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider, useApp } from './src/store/AppContext';
 import { TabBar, TabDef } from './src/components/TabBar';
@@ -11,6 +11,7 @@ import { DashboardScreen } from './src/screens/DashboardScreen';
 import { BudgetScreen } from './src/screens/BudgetScreen';
 import { GreenhouseScreen } from './src/screens/GreenhouseScreen';
 import { StormScreen } from './src/screens/StormScreen';
+import { SettingsModal } from './src/screens/SettingsModal';
 import { colors, font, space } from './src/theme';
 
 const TABS: TabDef[] = [
@@ -23,6 +24,7 @@ const TABS: TabDef[] = [
 function Shell() {
   const { ready } = useApp();
   const [active, setActive] = useState('dashboard');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!ready) {
     return (
@@ -36,9 +38,15 @@ function Shell() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>植富 3000</Text>
-        <Text style={styles.tagline}>WealthTree 3000・反焦慮・自動化</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.brand}>植富 3000</Text>
+          <Text style={styles.tagline}>WealthTree 3000・反焦慮・自動化</Text>
+        </View>
+        <Pressable onPress={() => setSettingsOpen(true)} hitSlop={12} style={styles.gear}>
+          <Text style={styles.gearIcon}>⚙️</Text>
+        </Pressable>
       </View>
+      <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <View style={styles.body}>
         {active === 'dashboard' && <DashboardScreen />}
         {active === 'budget' && <BudgetScreen />}
@@ -62,11 +70,17 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.sand },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: space.md,
     paddingTop: space.sm,
     paddingBottom: space.sm,
     backgroundColor: colors.paper,
   },
+  headerText: { flex: 1 },
+  gear: { padding: space.xs },
+  gearIcon: { fontSize: 22 },
   brand: { fontSize: font.title, fontWeight: '800', color: colors.leafDeep },
   tagline: { fontSize: font.tiny, color: colors.inkFaint, marginTop: 2 },
   body: { flex: 1 },
