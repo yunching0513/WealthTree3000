@@ -34,6 +34,16 @@ npm run web       # 瀏覽器預覽
 > 環境：Node 22、Expo SDK 56、React 19、React Native 0.85。
 > 原型資料**只存在裝置本機**（AsyncStorage），開發方伺服器不留存任何明碼財務數據。
 
+## 部署到手機
+
+把 App 裝到自己的 iPhone / Android（用 EAS Build，免 Mac）的完整步驟見 [`DEPLOY.md`](./DEPLOY.md)。
+最快路徑（Android）：
+
+```bash
+npm i -g eas-cli && eas login && eas init
+eas build -p android --profile preview   # 打包完用手機開下載連結即可安裝 APK
+```
+
 ---
 
 ## 四大模組（對應規格）
