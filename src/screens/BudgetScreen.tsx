@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useApp } from '../store/AppContext';
 import { formatTWD, remainingBudget, spentThisMonth } from '../store/finance';
+import { maybeWarnOverspend } from '../services/notifications';
 import { Card, Caption, Pill, ProgressBar, PrimaryButton, SectionTitle } from '../components/ui';
 import { colors, font, radius, space } from '../theme';
 
@@ -26,6 +27,9 @@ export function BudgetScreen() {
   const onAdd = () => {
     const value = Math.round(Number(amount));
     if (!value || value <= 0) return;
+    // 低干擾提醒：只在這筆讓餘額「剛跨過警戒線」時發一次通知。
+    const prevRemaining = remaining;
+    maybeWarnOverspend(prevRemaining, prevRemaining - value, state.livingBudget);
     addExpense(value, note);
     setAmount('');
     setNote('');

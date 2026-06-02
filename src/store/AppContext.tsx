@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_STATE, FinanceState, Expense, clamp } from './finance';
+import { fetchMarketSnapshot, isMarketStale } from '../services/market';
 
 const STORAGE_KEY = '@wealthtree3000/state/v1';
 
@@ -17,6 +18,7 @@ type Action =
   | { type: 'removeExpense'; id: string }
   | { type: 'closeMonth' } // 月度結算：判定紀律、推進月數、清空本月記帳
   | { type: 'setMarketTrend'; value: number }
+  | { type: 'setMarket'; trend: number; label: string; syncISO: string }
   | { type: 'setBudget'; livingBudget: number }
   | { type: 'reset' };
 
@@ -62,6 +64,14 @@ function reducer(state: FinanceState, action: Action): FinanceState {
     case 'setMarketTrend':
       return { ...state, marketTrend: clamp(action.value, -1, 1) };
 
+    case 'setMarket':
+      return {
+        ...state,
+        marketTrend: clamp(action.trend, -1, 1),
+        marketIndexLabel: action.label,
+        lastMarketSyncISO: action.syncISO,
+      };
+
     case 'setBudget':
       return { ...state, livingBudget: Math.max(0, action.livingBudget) };
 
@@ -82,6 +92,8 @@ interface AppContextValue {
   setMarketTrend: (value: number) => void;
   unlockAndSetBudget: (password: string, livingBudget: number) => boolean;
   restore: (payload: FinanceState) => void;
+  refreshMarket: (force?: boolean) => Promise<'updated' | 'fresh' | 'failed'>;
+  marketSyncing: boolean;
   reset: () => void;
 }
 
@@ -90,7 +102,31 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const [ready, setReady] = React.useState(false);
+  const [marketSyncing, setMarketSyncing] = React.useState(false);
   const hydrated = useRef(false);
+  const syncing = useRef(false);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const refreshMarket = React.useCallback(
+    async (force = false): Promise<'updated' | 'fresh' | 'failed'> => {
+      if (syncing.current) return 'fresh';
+      if (!force && !isMarketStale(stateRef.current.lastMarketSyncISO)) return 'fresh';
+      syncing.current = true;
+      setMarketSyncing(true);
+      try {
+        const snap = await fetchMarketSnapshot();
+        dispatch({ type: 'setMarket', trend: snap.trend, label: snap.label, syncISO: new Date().toISOString() });
+        return 'updated';
+      } catch {
+        return 'failed'; // 連網失敗：沿用上次快取值，不阻斷使用
+      } finally {
+        syncing.current = false;
+        setMarketSyncing(false);
+      }
+    },
+    [],
+  );
 
   // 啟動時從本機載入
   useEffect(() => {
@@ -113,6 +149,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
   }, [state]);
 
+  // 載入完成後，若指數資料過期（>28 天）則於背景短暫連網更新一次（符合「僅每月連網」）
+  useEffect(() => {
+    if (ready) refreshMarket(false);
+  }, [ready, refreshMarket]);
+
   const value = useMemo<AppContextValue>(
     () => ({
       state,
@@ -127,9 +168,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return true;
       },
       restore: (payload) => dispatch({ type: 'hydrate', payload: { ...DEFAULT_STATE, ...payload } }),
+      refreshMarket,
+      marketSyncing,
       reset: () => dispatch({ type: 'reset' }),
     }),
-    [state, ready],
+    [state, ready, refreshMarket, marketSyncing],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

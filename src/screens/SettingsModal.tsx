@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useApp } from '../store/AppContext';
 import { exportBackup, importBackup } from '../store/backup';
+import { ensurePermissions } from '../services/notifications';
 import { Card, Caption, PrimaryButton, SectionTitle } from '../components/ui';
 import { colors, font, radius, space } from '../theme';
 
@@ -95,6 +96,22 @@ export function SettingsModal({ visible, onClose }: { visible: boolean; onClose:
               <PrimaryButton label={busy ? '處理中…' : '匯出備份'} onPress={onExport} disabled={busy} />
               <View style={{ height: space.sm }} />
               <PrimaryButton label="從備份還原" tone={colors.bark} onPress={onImport} disabled={busy} />
+            </Card>
+
+            <Card>
+              <SectionTitle>低干擾提醒</SectionTitle>
+              <Caption>
+                平時不打擾。只有「生活費即將見底 / 已超支」才提醒；每月扣款成功僅以靜默通知呈現。
+              </Caption>
+              <View style={{ height: space.md }} />
+              <PrimaryButton
+                label="啟用提醒"
+                tone={colors.leafLight}
+                onPress={async () => {
+                  const ok = await ensurePermissions();
+                  Alert.alert(ok ? '已啟用低干擾提醒' : '尚未取得通知權限', ok ? '超支與扣款通知將以低干擾方式送達。' : '請到系統設定開啟此 App 的通知權限。');
+                }}
+              />
             </Card>
 
             <Card>

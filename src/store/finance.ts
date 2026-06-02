@@ -36,7 +36,9 @@ export interface FinanceState {
   monthsElapsed: number; // 已執行月數
   disciplineStreak: number; // 連續達成紀律的月數
   rings: number; // 年輪數（= floor(streak / 12)）
-  marketTrend: number; // 大盤長期趨勢 -1..1（模擬）
+  marketTrend: number; // 大盤長期趨勢 -1..1
+  marketIndexLabel: string; // 指數名稱（顯示用）
+  lastMarketSyncISO?: string; // 上次連網更新指數的時間（無 = 尚未同步，使用模擬值）
 
   // 本月生活費記帳
   expenses: Expense[];
@@ -88,6 +90,8 @@ export const DEFAULT_STATE: FinanceState = {
   disciplineStreak: 0,
   rings: 0,
   marketTrend: 0.45,
+  marketIndexLabel: 'S&P 500（模擬）',
+  lastMarketSyncISO: undefined,
 
   expenses: [],
 };

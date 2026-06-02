@@ -218,6 +218,13 @@ function settings() {
   s += txt(32, top + 262, '設了密碼，備份檔會以 AES 加密；還原時需相同密碼。', { size: 11, color: C.inkSoft });
   s += `<rect x="32" y="${top + 280}" width="326" height="46" rx="23" fill="${C.leaf}"/>` + txt(195, top + 309, '匯出備份', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
   s += `<rect x="32" y="${top + 334}" width="326" height="46" rx="23" fill="${C.bark}"/>` + txt(195, top + 363, '從備份還原', { size: 15, anchor: 'middle', color: '#fff', weight: 'bold' });
+  // 低干擾提醒卡
+  const ny = top + 56 + 366 + 12;
+  s += card(16, ny, 358, 116);
+  s += txt(32, ny + 30, '低干擾提醒', { size: 17, weight: 'bold' });
+  s += txt(32, ny + 54, '平時不打擾。只有生活費即將見底 / 已超支才提醒；', { size: 12, color: C.inkSoft });
+  s += txt(32, ny + 72, '每月扣款成功僅以靜默通知呈現。', { size: 12, color: C.inkSoft });
+  s += `<rect x="32" y="${ny + 84}" width="326" height="20" rx="6" fill="${C.leafLight}"/>` + txt(195, ny + 99, '啟用提醒', { size: 12, anchor: 'middle', color: '#fff', weight: 'bold' });
   return bg + dim + s;
 }
 await renderRaw('05-settings-backup', settings());
