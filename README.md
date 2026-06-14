@@ -44,6 +44,18 @@ npm i -g eas-cli && eas login && eas init
 eas build -p android --profile preview   # 打包完用手機開下載連結即可安裝 APK
 ```
 
+## 網頁版（GitHub Pages）
+
+已內建自動部署 workflow（`.github/workflows/deploy-web.yml`）。推送到分支後，GitHub Actions 會打包 web 版並發佈到：
+
+**https://yunching0513.github.io/WealthTree3000/**
+
+啟用一次即可：repo **Settings → Pages → Source** 選 **GitHub Actions**。之後每次 push 自動更新。
+手動本機打包：`EXPO_WEB_BASE_URL=/WealthTree3000 npx expo export -p web`（輸出在 `dist/`）。
+
+> 網頁版說明：資料存在「該瀏覽器」的 localStorage（換裝置不跟著走，適合展示/試用）；
+> 通知功能在 web 不啟用；大盤指數的即時抓取在瀏覽器可能因來源 CORS 而失敗，會自動沿用模擬值。
+
 ---
 
 ## 四大模組（對應規格）
