@@ -105,6 +105,119 @@ export async function fetchLatestDigest(signal?: AbortSignal): Promise<DigestRes
   }
 }
 
+// ── 價格走勢圖（時間長度可選的折線圖）─────────────────────────────
+
+/** 可選的時間長度。 */
+export type TrendRange = '1M' | '3M' | '6M' | '1Y' | '5Y';
+
+/** 時間長度定義（label 顯示用、days 約略交易日數）。 */
+export const TREND_RANGES: { key: TrendRange; label: string; days: number }[] = [
+  { key: '1M', label: '1個月', days: 22 },
+  { key: '3M', label: '3個月', days: 66 },
+  { key: '6M', label: '6個月', days: 130 },
+  { key: '1Y', label: '1年', days: 252 },
+  { key: '5Y', label: '5年', days: 1260 },
+];
+
+/** 單一收盤點。 */
+export interface PricePoint {
+  t: string; // 'YYYY-MM-DD'
+  c: number; // 收盤價
+}
+
+/** 一檔商品在某時間長度下的價格序列（由舊到新）。 */
+export interface PriceSeries {
+  symbol: string;
+  label: string;
+  range: TrendRange;
+  points: PricePoint[];
+}
+
+export interface SeriesResult {
+  series: PriceSeries;
+  source: DigestSource;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** FNV-1a 雜湊，把 symbol 轉成穩定種子。 */
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** mulberry32 確定性 PRNG（同種子 → 同序列，避免圖表每次 render 跳動）。 */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 以 UTC 計算 anchorISO 往回 daysAgo 天的日期字串（避免時區位移）。 */
+function dateBack(anchorISO: string, daysAgo: number): string {
+  const base = Date.parse(`${anchorISO}T00:00:00Z`);
+  return new Date(base - daysAgo * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * 範例價格序列（確定性）。以 symbol+range 為種子做隨機漫步，終點錨定在
+ * endPrice，使圖表終值與報價一致。僅供 Phase 1 預覽走勢圖互動；Phase 2
+ * 後端 `/series` 上線後改用真實歷史行情。
+ */
+export function buildSampleSeries(
+  symbol: string,
+  label: string,
+  endPrice: number,
+  range: TrendRange,
+  anchorISO = '2026-06-18',
+): PriceSeries {
+  const meta = TREND_RANGES.find((r) => r.key === range) ?? TREND_RANGES[1];
+  const n = Math.max(8, meta.days);
+  const rng = mulberry32(hashSeed(symbol + range));
+  const closes = new Array<number>(n);
+  closes[n - 1] = endPrice;
+  for (let i = n - 2; i >= 0; i--) {
+    const ret = (rng() - 0.5) * 0.02 + 0.0003; // ±1% 日波動 + 微幅上升漂移
+    closes[i] = Math.max(0.01, closes[i + 1] / (1 + ret));
+  }
+  const points: PricePoint[] = closes.map((c, i) => ({ t: dateBack(anchorISO, n - 1 - i), c: round2(c) }));
+  return { symbol, label, range, points };
+}
+
+/**
+ * 取得某檔商品在指定時間長度的價格序列。
+ * Phase 2 後端上線（NEWS_BACKEND_URL 有值）則向 `/series` 取真實歷史，
+ * 失敗或尚未設定則回退到確定性範例序列。
+ */
+export async function fetchSeries(
+  quote: Pick<NewsQuote, 'symbol' | 'label' | 'price'>,
+  range: TrendRange,
+  signal?: AbortSignal,
+): Promise<SeriesResult> {
+  if (!NEWS_BACKEND_URL) {
+    return { series: buildSampleSeries(quote.symbol, quote.label, quote.price, range), source: 'sample' };
+  }
+  try {
+    const url = `${NEWS_BACKEND_URL}/series?symbol=${encodeURIComponent(quote.symbol)}&range=${range}`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const series = (await res.json()) as PriceSeries;
+    return { series, source: 'network' };
+  } catch {
+    return { series: buildSampleSeries(quote.symbol, quote.label, quote.price, range), source: 'sample' };
+  }
+}
+
 /**
  * 內建範例速報。僅供 Phase 1 預覽版面與資料格式，內容非即時行情；
  * UI 會明確標示「範例資料」。Phase 2 後端上線後即由真實內容取代。

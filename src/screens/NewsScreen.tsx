@@ -19,6 +19,7 @@ import {
   fetchLatestDigest,
 } from '../services/news';
 import { Card, Caption, Pill, SectionTitle } from '../components/ui';
+import { QuoteChartModal } from '../components/QuoteChartModal';
 import { colors, font, radius, space } from '../theme';
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -45,6 +46,7 @@ export function NewsScreen() {
   const [source, setSource] = React.useState<DigestSource>('sample');
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [activeQuote, setActiveQuote] = React.useState<NewsQuote | null>(null);
 
   const load = React.useCallback(async (isRefresh: boolean) => {
     if (isRefresh) setRefreshing(true);
@@ -80,6 +82,7 @@ export function NewsScreen() {
   }
 
   return (
+    <>
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
@@ -98,10 +101,11 @@ export function NewsScreen() {
         </View>
         <Text style={styles.headline}>{digest.headline}</Text>
         <Caption>{digest.brief}</Caption>
+        <Text style={styles.hint}>📈 輕觸任一報價可查看價格走勢圖（可選時間長度）</Text>
       </Card>
 
       {digest.sections.map((section) => (
-        <SectionCard key={section.category} section={section} />
+        <SectionCard key={section.category} section={section} onQuotePress={setActiveQuote} />
       ))}
 
       <Text style={styles.footer}>
@@ -110,10 +114,12 @@ export function NewsScreen() {
       </Text>
       <Text style={styles.footerHint}>點擊任一則新聞可開啟原文。資料僅供參考，非投資建議。</Text>
     </ScrollView>
+    <QuoteChartModal quote={activeQuote} onClose={() => setActiveQuote(null)} />
+    </>
   );
 }
 
-function SectionCard({ section }: { section: NewsSection }) {
+function SectionCard({ section, onQuotePress }: { section: NewsSection; onQuotePress: (q: NewsQuote) => void }) {
   return (
     <Card>
       <View style={styles.rowBetween}>
@@ -127,7 +133,7 @@ function SectionCard({ section }: { section: NewsSection }) {
       {section.quotes && section.quotes.length > 0 && (
         <View style={styles.quoteRow}>
           {section.quotes.map((q) => (
-            <QuoteChip key={q.symbol} quote={q} />
+            <QuoteChip key={q.symbol} quote={q} onPress={() => onQuotePress(q)} />
           ))}
         </View>
       )}
@@ -141,21 +147,24 @@ function SectionCard({ section }: { section: NewsSection }) {
   );
 }
 
-/** 報價小卡。台股慣例：紅漲綠跌（上漲 danger 紅、下跌 leafDeep 綠）。 */
-function QuoteChip({ quote }: { quote: NewsQuote }) {
+/** 報價小卡（可點 → 走勢圖）。台股慣例：紅漲綠跌（上漲 danger 紅、下跌 leafDeep 綠）。 */
+function QuoteChip({ quote, onPress }: { quote: NewsQuote; onPress: () => void }) {
   const up = quote.changePct >= 0;
   const tint = up ? colors.danger : colors.leafDeep;
   const arrow = up ? '▲' : '▼';
   const sign = up ? '+' : '';
   return (
-    <View style={styles.quoteChip}>
-      <Text style={styles.quoteLabel}>{quote.label}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.quoteChip, pressed && styles.quoteChipPressed]}>
+      <View style={styles.quoteLabelRow}>
+        <Text style={styles.quoteLabel}>{quote.label}</Text>
+        <Text style={styles.quoteSpark}>📈</Text>
+      </View>
       <Text style={styles.quotePrice}>{fmtPrice(quote.price)}</Text>
       <Text style={[styles.quoteChange, { color: tint }]}>
         {arrow} {sign}
         {quote.changePct.toFixed(2)}%
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -185,6 +194,7 @@ const styles = StyleSheet.create({
   heroEmoji: { fontSize: 20 },
   heroDate: { fontSize: font.section, fontWeight: '800', color: colors.leafDeep },
   headline: { fontSize: font.title, fontWeight: '800', color: colors.ink, lineHeight: 30, marginTop: space.sm, marginBottom: space.xs },
+  hint: { fontSize: font.tiny, color: colors.wither, marginTop: space.sm, fontWeight: '700' },
 
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   sectionEmoji: { fontSize: 18 },
@@ -195,9 +205,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     paddingHorizontal: space.sm + 2,
     paddingVertical: space.sm,
-    minWidth: 96,
+    minWidth: 100,
   },
-  quoteLabel: { fontSize: font.tiny, color: colors.inkSoft, marginBottom: 2 },
+  quoteChipPressed: { opacity: 0.6 },
+  quoteLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.xs, marginBottom: 2 },
+  quoteSpark: { fontSize: 10, opacity: 0.5 },
+  quoteLabel: { fontSize: font.tiny, color: colors.inkSoft },
   quotePrice: { fontSize: font.body, fontWeight: '800', color: colors.ink },
   quoteChange: { fontSize: font.tiny, fontWeight: '700', marginTop: 1 },
 
