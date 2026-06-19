@@ -152,3 +152,8 @@ export const ALLOWED_SYMBOLS: Record<string, string> = (() => {
 export const MODEL = 'claude-haiku-4-5';
 export const KV_DIGEST_KEY = 'digest:latest';
 export const USER_AGENT = 'Mozilla/5.0 (compatible; WealthTreeNewsBot/1.0)';
+
+// 推播（Phase 3）
+export const TOKEN_PREFIX = 'token:'; // KV 鍵前綴，存匿名 Expo push token
+export const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+export const PUSH_CHANNEL = 'news-daily'; // Android 通知頻道（與 App 端一致）
