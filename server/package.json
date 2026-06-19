@@ -1,0 +1,17 @@
+{
+  "name": "wealthtree-news-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "植富 3000 每日財經速報後端（Cloudflare Worker）",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "refresh": "curl -s -X POST -H \"x-admin-key: $ADMIN_KEY\" \"$WORKER_URL/admin/refresh\""
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^3.78.0"
+  }
+}
