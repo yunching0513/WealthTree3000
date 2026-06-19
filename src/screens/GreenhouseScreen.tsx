@@ -9,6 +9,7 @@ import {
   needsRebalanceNudge,
   totalAssets,
 } from '../store/finance';
+import { notifyMonthlyDeduction } from '../services/notifications';
 import { Card, Caption, Pill, ProgressBar, PrimaryButton, SectionTitle } from '../components/ui';
 import { colors, font, space } from '../theme';
 
@@ -23,6 +24,8 @@ export function GreenhouseScreen() {
 
   const onUnlock = () => {
     closeMonth();
+    // 每月扣款成功：靜默通知（不發聲、低重要性）。
+    notifyMonthlyDeduction(state.monthlyInvest, state.monthlyMortgage);
     setUnlocked(true);
   };
 

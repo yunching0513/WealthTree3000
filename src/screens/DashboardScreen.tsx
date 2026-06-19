@@ -1,6 +1,6 @@
 /** 模組一：溫室總覽 (Dashboard) */
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../store/AppContext';
 import {
   currentStage,
@@ -21,7 +21,7 @@ import { Card, Caption, Pill, ProgressBar, SectionTitle } from '../components/ui
 import { colors, font, space } from '../theme';
 
 export function DashboardScreen() {
-  const { state } = useApp();
+  const { state, refreshMarket, marketSyncing } = useApp();
   const progress = targetProgress(state);
   const stage = currentStage(state);
   const phase = lifecyclePhase(state);
@@ -69,13 +69,28 @@ export function DashboardScreen() {
         </View>
       </Card>
 
-      {/* 天氣系統 */}
+      {/* 天氣系統（由真實大盤指數驅動） */}
       <Card style={[styles.weatherCard, weather.bear ? styles.weatherBear : styles.weatherBull]}>
         <View style={styles.rowBetween}>
           <SectionTitle>天氣・{weather.label}</SectionTitle>
           <Text style={styles.weatherEmoji}>{weather.emoji}</Text>
         </View>
         <Caption>{weather.message}</Caption>
+        <View style={styles.marketRow}>
+          <Text style={styles.marketMeta}>
+            {state.marketIndexLabel}・
+            {state.lastMarketSyncISO
+              ? `更新於 ${state.lastMarketSyncISO.slice(0, 10)}`
+              : '尚未連網，使用模擬值'}
+          </Text>
+          <Pressable onPress={() => refreshMarket(true)} disabled={marketSyncing} hitSlop={8}>
+            {marketSyncing ? (
+              <ActivityIndicator size="small" color={colors.leaf} />
+            ) : (
+              <Text style={styles.marketRefresh}>更新指數</Text>
+            )}
+          </Pressable>
+        </View>
       </Card>
 
       {/* 年輪 / 陪伴 */}
@@ -131,6 +146,17 @@ const styles = StyleSheet.create({
   weatherBull: { backgroundColor: '#EAF4E6' },
   weatherBear: { backgroundColor: '#EDE7DA' },
   weatherEmoji: { fontSize: 24 },
+  marketRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: space.sm,
+    paddingTop: space.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(51,41,31,0.08)',
+  },
+  marketMeta: { fontSize: font.tiny, color: colors.inkFaint, flex: 1 },
+  marketRefresh: { fontSize: font.small, color: colors.leaf, fontWeight: '700' },
   companionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
   companion: { fontSize: 26 },
 });
