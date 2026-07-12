@@ -6,11 +6,15 @@
  *  - 每月扣款成功僅以「靜默通知」呈現（不發聲、低重要性）。
  */
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { formatTWD } from '../store/finance';
+import { NEWS_BACKEND_URL } from './news';
 
 const CH_ALERT = 'budget-alerts'; // 超支提醒
 const CH_SILENT = 'silent-updates'; // 靜默扣款通知
+const CH_NEWS = 'news-daily'; // 每日財經推播（遠端，與後端 PUSH_CHANNEL 一致）
 
 let handlerSet = false;
 let channelsReady = false;
@@ -40,6 +44,11 @@ async function ensureChannels() {
   await Notifications.setNotificationChannelAsync(CH_SILENT, {
     name: '扣款通知',
     importance: Notifications.AndroidImportance.LOW, // 不彈出、不發聲
+    sound: null,
+  });
+  await Notifications.setNotificationChannelAsync(CH_NEWS, {
+    name: '每日財經速報',
+    importance: Notifications.AndroidImportance.DEFAULT, // 顯示於通知列、不發聲
     sound: null,
   });
   channelsReady = true;
@@ -90,4 +99,85 @@ export async function notifyMonthlyDeduction(invest: number, mortgage: number): 
     '✅ 本月灌溉完成',
     `陽光水分（投資）${formatTWD(invest)}、土壤養分（房貸本金）${formatTWD(mortgage)} 已扣款。`,
   );
+}
+
+// ── 每日財經推播（Phase 3）─────────────────────────────────────────
+//
+// 本機只向後端上傳「匿名 Expo push token」；個人理財資料一律不外傳。
+// 需求：EAS projectId（執行 `eas init` 後寫入 app.json 的 extra.eas.projectId）
+// 與已部署的後端網址（src/services/news.ts 的 NEWS_BACKEND_URL）。
+
+const NEWS_PREF_KEY = '@wealthtree3000/newsPush/v1';
+
+export type NewsPushResult = { ok: true } | { ok: false; reason: string };
+
+export async function getNewsPushEnabled(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(NEWS_PREF_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+async function setNewsPushPref(v: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(NEWS_PREF_KEY, v ? '1' : '0');
+  } catch {
+    // 偏好寫入失敗不影響推播本身
+  }
+}
+
+function resolveProjectId(): string | undefined {
+  const c: any = Constants;
+  return c?.expoConfig?.extra?.eas?.projectId || c?.easConfig?.projectId || undefined;
+}
+
+async function getPushToken(): Promise<string | null> {
+  const projectId = resolveProjectId();
+  if (!projectId) return null;
+  try {
+    const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** 啟用每日財經推播：取得 Expo token 並向後端註冊。 */
+export async function enableNewsPush(): Promise<NewsPushResult> {
+  if (Platform.OS === 'web') return { ok: false, reason: 'web' };
+  if (!(await ensurePermissions())) return { ok: false, reason: 'no-permission' };
+  if (!NEWS_BACKEND_URL) return { ok: false, reason: 'no-backend' };
+  if (!resolveProjectId()) return { ok: false, reason: 'no-project-id' };
+  const token = await getPushToken();
+  if (!token) return { ok: false, reason: 'no-token' };
+  try {
+    const res = await fetch(`${NEWS_BACKEND_URL}/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token, platform: Platform.OS }),
+    });
+    if (!res.ok) return { ok: false, reason: `backend ${res.status}` };
+    await setNewsPushPref(true);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, reason: e?.message ?? 'network' };
+  }
+}
+
+/** 關閉每日財經推播：向後端取消註冊。 */
+export async function disableNewsPush(): Promise<void> {
+  await setNewsPushPref(false);
+  if (Platform.OS === 'web' || !NEWS_BACKEND_URL) return;
+  const token = await getPushToken();
+  if (!token) return;
+  try {
+    await fetch(`${NEWS_BACKEND_URL}/unregister`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+  } catch {
+    // 取消註冊失敗：後端在下次推播失效時也會自動清理
+  }
 }

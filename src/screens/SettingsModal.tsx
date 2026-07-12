@@ -1,5 +1,5 @@
 /** 設定・資料備份與還原 */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -13,7 +13,7 @@ import {
 import { useApp } from '../store/AppContext';
 import { exportBackup, importBackup } from '../store/backup';
 import { isHardwareBacked } from '../store/secureStorage';
-import { ensurePermissions } from '../services/notifications';
+import { disableNewsPush, enableNewsPush, ensurePermissions, getNewsPushEnabled } from '../services/notifications';
 import { Card, Caption, Pill, PrimaryButton, SectionTitle } from '../components/ui';
 import { colors, font, radius, space } from '../theme';
 
@@ -21,6 +21,41 @@ export function SettingsModal({ visible, onClose }: { visible: boolean; onClose:
   const { state, restore } = useApp();
   const [pass, setPass] = useState('');
   const [busy, setBusy] = useState(false);
+  const [newsOn, setNewsOn] = useState(false);
+  const [newsBusy, setNewsBusy] = useState(false);
+
+  useEffect(() => {
+    getNewsPushEnabled().then(setNewsOn);
+  }, []);
+
+  const toggleNews = async () => {
+    if (newsBusy) return;
+    setNewsBusy(true);
+    try {
+      if (newsOn) {
+        await disableNewsPush();
+        setNewsOn(false);
+        Alert.alert('已關閉', '不再接收每日財經推播。');
+      } else {
+        const r = await enableNewsPush();
+        if (r.ok) {
+          setNewsOn(true);
+          Alert.alert('已啟用', '每天早上 07:30 起會收到《今日財經速報》。');
+        } else {
+          const map: Record<string, string> = {
+            web: '網頁版不支援推播，請用手機 App 啟用。',
+            'no-permission': '尚未取得通知權限，請到系統設定開啟。',
+            'no-backend': '尚未設定後端網址（NEWS_BACKEND_URL）。',
+            'no-project-id': '尚未設定 EAS projectId，請先執行 eas init。',
+            'no-token': '無法取得推播 token，請改用實機或開發版 App。',
+          };
+          Alert.alert('尚未啟用', map[r.reason] ?? `啟用失敗：${r.reason}`);
+        }
+      }
+    } finally {
+      setNewsBusy(false);
+    }
+  };
 
   const onExport = async () => {
     if (busy) return;
@@ -123,6 +158,24 @@ export function SettingsModal({ visible, onClose }: { visible: boolean; onClose:
                   const ok = await ensurePermissions();
                   Alert.alert(ok ? '已啟用低干擾提醒' : '尚未取得通知權限', ok ? '超支與扣款通知將以低干擾方式送達。' : '請到系統設定開啟此 App 的通知權限。');
                 }}
+              />
+            </Card>
+
+            <Card>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusText}>📰 每日財經推播</Text>
+                <Pill tone={newsOn ? 'good' : 'neutral'}>{newsOn ? '已啟用' : '未啟用'}</Pill>
+              </View>
+              <Caption>
+                每天早上 07:30 推送一則繁中《今日財經速報》（貴金屬／期貨／美股／臺股／歐盟／東亞）。
+                只上傳匿名推播識別碼，個人理財資料不外傳。
+              </Caption>
+              <View style={{ height: space.md }} />
+              <PrimaryButton
+                label={newsBusy ? '處理中…' : newsOn ? '關閉每日推播' : '啟用每日推播'}
+                tone={newsOn ? colors.bark : colors.leaf}
+                disabled={newsBusy}
+                onPress={toggleNews}
               />
             </Card>
 

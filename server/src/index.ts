@@ -14,6 +14,7 @@
 import { ALLOWED_SYMBOLS, KV_DIGEST_KEY, TrendRange, YF_RANGE } from './config';
 import { buildDigest } from './digest';
 import { fetchSeries } from './prices';
+import { addToken, isExpoToken, pushDigest, removeToken } from './push';
 
 export interface Env {
   KV: KVNamespace;
@@ -34,10 +35,11 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-async function refresh(env: Env): Promise<{ date: string; sections: number }> {
+async function refresh(env: Env): Promise<{ date: string; sections: number; sent: number; pruned: number }> {
   const digest = await buildDigest(env, new Date());
   await env.KV.put(KV_DIGEST_KEY, JSON.stringify(digest));
-  return { date: digest.date, sections: digest.sections.length };
+  const push = await pushDigest(env.KV, digest); // 推給所有已註冊裝置並清理失效 token
+  return { date: digest.date, sections: digest.sections.length, ...push };
 }
 
 export default {
@@ -53,6 +55,30 @@ export default {
       return new Response(cached, {
         headers: { 'content-type': 'application/json; charset=utf-8', ...CORS },
       });
+    }
+
+    if (url.pathname === '/register' && req.method === 'POST') {
+      let body: any;
+      try {
+        body = await req.json();
+      } catch {
+        return json({ error: 'bad json' }, 400);
+      }
+      if (!isExpoToken(body?.token)) return json({ error: 'invalid token' }, 400);
+      await addToken(env.KV, body.token, typeof body.platform === 'string' ? body.platform : 'unknown');
+      return json({ ok: true });
+    }
+
+    if (url.pathname === '/unregister' && req.method === 'POST') {
+      let body: any;
+      try {
+        body = await req.json();
+      } catch {
+        return json({ error: 'bad json' }, 400);
+      }
+      if (!isExpoToken(body?.token)) return json({ error: 'invalid token' }, 400);
+      await removeToken(env.KV, body.token);
+      return json({ ok: true });
     }
 
     if (url.pathname === '/series' && req.method === 'GET') {

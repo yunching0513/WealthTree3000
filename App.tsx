@@ -2,9 +2,10 @@
  * 植富 3000 (WealthTree 3000)
  * 為長期投資者打造的反焦慮記帳與目標管理 App。
  */
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { AppProvider, useApp } from './src/store/AppContext';
 import { TabBar, TabDef } from './src/components/TabBar';
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -27,6 +28,20 @@ function Shell() {
   const { ready } = useApp();
   const [active, setActive] = useState('dashboard');
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // 點每日財經推播 → 切到「今日財經」分頁（含 App 由推播冷啟動的情況）
+  useEffect(() => {
+    if (Platform.OS === 'web') return; // web 不支援推播監聽
+    const isNews = (resp: Notifications.NotificationResponse | null) =>
+      (resp?.notification?.request?.content?.data as any)?.type === 'news';
+    const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
+      if (isNews(resp)) setActive('news');
+    });
+    Notifications.getLastNotificationResponseAsync().then((resp) => {
+      if (isNews(resp)) setActive('news');
+    });
+    return () => sub.remove();
+  }, []);
 
   if (!ready) {
     return (
