@@ -126,3 +126,11 @@ src/
 > 註：本開發環境的網路政策未開放瀏覽器二進位下載與外部 API；上方預覽圖由離線渲染器
 > 重現真實繪圖程式產生，大盤指數則需在你自己的裝置上連網實測。
 > 請以 `npm run web` 或 `npm run ios/android` 在本機完整預覽互動。
+
+
+---
+
+## 著作權 Copyright
+
+© 2026　吳昀慶 Yun-Ching Wu
+授權條款見 [`LICENSE`](LICENSE)　詳細聲明見 [`COPYRIGHT.md`](COPYRIGHT.md)
