@@ -105,7 +105,7 @@ function confirmRemove(title: string, message: string, onConfirm: () => void): v
 
 export function MarketScreen() {
   const mountedRef = React.useRef(true); // unmount 後禁止任何 setState
-  const codesRef = React.useRef<string[]>([]); // 讓 interval 閉包永遠拿到最新自選清單
+  const codesRef = React.useRef<string[]>([]); // 讓非同步回呼永遠拿到最新自選清單
   const loadSeqRef = React.useRef(0); // 併發 load 序號：只有最新一次請求能寫入狀態
   const [codes, setCodes] = React.useState<string[]>([]);
   const [board, setBoard] = React.useState<MarketDashboard | null>(null);
@@ -114,8 +114,8 @@ export function MarketScreen() {
   const [input, setInput] = React.useState('');
   const [selected, setSelected] = React.useState<TwQuote | null>(null); // 開走勢視窗的個股
 
-  /** 重抓看盤資料。kind：button=顯示轉圈、pull=下拉、silent=盤中自動更新（不打擾）。 */
-  const load = React.useCallback(async (kind: 'button' | 'pull' | 'silent') => {
+  /** 重抓看盤資料。kind：button=按「更新」顯示轉圈、pull=下拉更新。兩者都由使用者發起。 */
+  const load = React.useCallback(async (kind: 'button' | 'pull') => {
     const seq = ++loadSeqRef.current;
     if (kind === 'button') setLoading(true);
     if (kind === 'pull') setRefreshing(true);
@@ -138,13 +138,10 @@ export function MarketScreen() {
       setCodes(list);
       await load('button');
     })();
-    // 每 60 秒自動更新；僅台股盤中（Asia/Taipei 週一~五 09:00–13:30）才真的重抓
-    const timer = setInterval(() => {
-      if (isTwMarketOpen(new Date())) void load('silent');
-    }, 60_000);
+    // 刻意沒有自動更新：本 App 的定位是反焦慮，行情不該自己跳動把人拉回來。
+    // 要更新只有兩條路——使用者下拉，或按右上角「更新」。
     return () => {
       mountedRef.current = false;
-      clearInterval(timer);
     };
   }, [load]);
 
@@ -212,11 +209,10 @@ export function MarketScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={() => void load('pull')} tintColor={colors.leaf} />
         }
       >
-        {/* 頂部列：標題 + 盤中/收盤 + 更新鈕；下行為資料狀態 */}
+        {/* 頂部列：盤中/收盤 + 更新鈕（靠右）；下行為資料狀態。
+            標題由外層 MarketModal 的 sheet header 顯示，這裡不重複。 */}
         <View style={styles.topRow}>
-          <View style={styles.topTitle}>
-            <SectionTitle>台股看盤</SectionTitle>
-          </View>
+          <View style={styles.topTitle} />
           <Pill tone={marketOpen ? 'good' : 'neutral'}>{marketOpen ? '盤中' : '收盤'}</Pill>
           <Pressable
             onPress={() => void load('button')}

@@ -20,6 +20,7 @@ import {
 } from '../services/news';
 import { Card, Caption, Pill, SectionTitle } from '../components/ui';
 import { QuoteChartModal } from '../components/QuoteChartModal';
+import { MarketModal } from './MarketModal';
 import { colors, font, radius, space } from '../theme';
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -47,6 +48,7 @@ export function NewsScreen() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [activeQuote, setActiveQuote] = React.useState<NewsQuote | null>(null);
+  const [marketOpen, setMarketOpen] = React.useState(false);
 
   const load = React.useCallback(async (isRefresh: boolean) => {
     if (isRefresh) setRefreshing(true);
@@ -113,8 +115,25 @@ export function NewsScreen() {
         {digest.model ? `・${digest.model}` : ''}
       </Text>
       <Text style={styles.footerHint}>點擊任一則新聞可開啟原文。資料僅供參考，非投資建議。</Text>
+
+      {/* 市場盤面入口：刻意放在整頁最底，也刻意不做成主分頁。
+          想看盤要自己滑到這裡、自己點開——反焦慮的做法不是假裝沒有這個需求，
+          而是不讓行情主動來找你。 */}
+      <Pressable
+        onPress={() => setMarketOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel="開啟市場盤面"
+        style={({ pressed }) => [styles.marketEntry, pressed && styles.marketEntryPressed]}
+      >
+        <View style={styles.marketEntryText}>
+          <Text style={styles.marketEntryLabel}>市場盤面</Text>
+          <Text style={styles.marketEntryHint}>加權／櫃買指數、三大法人、自選股報價</Text>
+        </View>
+        <Text style={styles.marketEntryChevron}>›</Text>
+      </Pressable>
     </ScrollView>
     <QuoteChartModal quote={activeQuote} onClose={() => setActiveQuote(null)} />
+    <MarketModal visible={marketOpen} onClose={() => setMarketOpen(false)} />
     </>
   );
 }
@@ -224,4 +243,22 @@ const styles = StyleSheet.create({
 
   footer: { fontSize: font.tiny, color: colors.inkFaint, textAlign: 'center', marginTop: space.sm },
   footerHint: { fontSize: font.tiny, color: colors.inkFaint, textAlign: 'center', marginTop: 2 },
+
+  marketEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44, // 無障礙最小觸控目標
+    marginTop: space.lg,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#DED7C7',
+    backgroundColor: colors.paper,
+  },
+  marketEntryPressed: { opacity: 0.6 },
+  marketEntryText: { flex: 1 },
+  marketEntryLabel: { fontSize: font.body, fontWeight: '700', color: colors.ink },
+  marketEntryHint: { fontSize: font.tiny, color: colors.inkFaint, marginTop: 2 },
+  marketEntryChevron: { fontSize: 22, color: colors.inkFaint, marginLeft: space.sm },
 });

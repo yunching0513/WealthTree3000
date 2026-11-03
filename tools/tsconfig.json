@@ -1,0 +1,13 @@
+{
+  // 工具腳本的編譯設定，與 App 分開。
+  // 這兩個選項只有 twstock-parsers.test.ts 需要（它 import 'node:assert/strict'
+  // 並直接指向 ../src/services/twstockParsers.ts），不該讓 App 的編譯帶上 node 型別。
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": []
+}

@@ -1,9 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "types": ["node"],
-    "allowImportingTsExtensions": true
+    "strict": true
   },
-  "exclude": ["node_modules", "server", "dist"]
+  "exclude": ["node_modules", "server", "dist", "tools"]
 }
