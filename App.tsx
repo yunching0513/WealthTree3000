@@ -10,6 +10,7 @@ import { AppProvider, useApp } from './src/store/AppContext';
 import { TabBar, TabDef } from './src/components/TabBar';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { NewsScreen } from './src/screens/NewsScreen';
+import { MarketScreen } from './src/screens/MarketScreen';
 import { BudgetScreen } from './src/screens/BudgetScreen';
 import { GreenhouseScreen } from './src/screens/GreenhouseScreen';
 import { StormScreen } from './src/screens/StormScreen';
@@ -19,6 +20,7 @@ import { colors, font, space } from './src/theme';
 const TABS: TabDef[] = [
   { key: 'dashboard', label: '溫室總覽', emoji: '🌳' },
   { key: 'news', label: '今日財經', emoji: '📰' },
+  { key: 'market', label: '看盤', emoji: '📈' },
   { key: 'budget', label: '水源分配', emoji: '💧' },
   { key: 'greenhouse', label: '時光溫室', emoji: '🎁' },
   { key: 'storm', label: '暴風雨', emoji: '🌪️' },
@@ -67,6 +69,7 @@ function Shell() {
       <View style={styles.body}>
         {active === 'dashboard' && <DashboardScreen />}
         {active === 'news' && <NewsScreen />}
+        {active === 'market' && <MarketScreen />}
         {active === 'budget' && <BudgetScreen />}
         {active === 'greenhouse' && <GreenhouseScreen />}
         {active === 'storm' && <StormScreen />}
